@@ -148,6 +148,12 @@ void print_array(album* arr, int size) {
     }
 }
 
+void free_albums(album* arr, int size) {
+    for (int i = 0; i < size; i++) {
+        delete[] arr[i].songs;
+    }
+    delete[] arr;
+}
 
 int main() {
     album* albums = init();
@@ -170,5 +176,10 @@ int main() {
     cout << "\nLinkin Park albums:\n";
     print_array(lp_albums, lp_size);
 
+    // освобождение памяти
+    delete[] funk_soul;
+    delete[] lp_albums;
+    free_albums(albums, ALBUMS_COUNT);
+    
     return 0;
 }
