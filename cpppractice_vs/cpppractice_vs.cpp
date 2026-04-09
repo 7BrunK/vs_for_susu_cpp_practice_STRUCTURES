@@ -1,16 +1,14 @@
 ﻿#include <iostream>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
-enum style {
+enum styles {
     Funk,
     Soul,
-    Jazz
-};
-
-struct date {
-    int year, month, day;
+    Jazz,
+    Rock
 };
 
 struct song {
@@ -19,74 +17,159 @@ struct song {
 };
 
 struct album {
-    song* songs;
     string name;
     string artist;
+    styles style;
+    int year;
+    float total_duration;
     int songs_number;
+    song* songs;
 };
 
 const size_t ALBUMS_COUNT = 20;
+
 album* init() {
     album* albums = new album[ALBUMS_COUNT];
-    // Альбом 1
-    albums[0].name = "Midnight Groove";
-    albums[0].artist = "The Funk Masters";
-    albums[0].songs_number = 3;
-    albums[0].songs = new song[3]{
-        {"Night Walk", 3.5},
-        {"Groove Machine", 4.2},
-        {"Funky Lights", 5.1}
-    };
-    // Альбом 2
-    albums[1].name = "Soul Vibes";
-    albums[1].artist = "Linkin Park";
-    albums[1].songs_number = 2;
-    albums[1].songs = new song[2]{
-        {"Deep Love", 4.0},
-        {"Heart Whisper", 3.8}
-    };
-    // Альбом 3
-    albums[2].name = "Jazz Nights";
-    albums[2].artist = "Linkin Park";
-    albums[2].songs_number = 4;
-    albums[2].songs = new song[4]{
-        {"Late Sax", 6.2},
-        {"Smooth Piano", 5.5},
-        {"City Rain", 4.7},
-        {"Quiet Street", 5.0}
-    };
-    // Альбом 4
-    albums[3].name = "Golden Funk";
-    albums[3].artist = "Retro Beat";
-    albums[3].songs_number = 3;
-    albums[3].songs = new song[3]{
-        {"Old School", 3.9},
-        {"Vinyl Spin", 4.3},
-        {"Back in Time", 4.8}
-    };
-    // Альбом 5
-    albums[4].name = "Soul Emotions";
-    albums[4].artist = "Marvin Clay";
-    albums[4].songs_number = 2;
-    albums[4].songs = new song[2]{
-        {"Broken Dreams", 4.6},
-        {"Stay With Me", 5.2}
-    };
-    // Остальные
-    for (size_t i = 5; i < ALBUMS_COUNT; i++) {
-        albums[i].name = "Album " + to_string(i + 1);
-        albums[i].artist = "Unknown Artist";
-        albums[i].songs_number = 1;
-        albums[i].songs = new song[1]{
-            {"Untitled Track", 3.0f}
-        };
+
+    for (int i = 0; i < ALBUMS_COUNT; i++) {
+        albums[i].name = "Album_" + to_string(i);
+        albums[i].artist = (i % 3 == 0) ? "Linkin Park" : "Artist_" + to_string(i);
+
+        styles style;
+        if (i % 2 == 0) {
+            if (i % 4 == 0) style = Funk;
+            else style = Soul;
+        }
+        else if (i % 3 == 0) style = Jazz;
+        else style = Rock;
+        albums[i].style = style;
+
+        albums[i].year = 2000 + i;
+        albums[i].songs_number = 3;
+
+        albums[i].songs = new song[albums[i].songs_number];
+        float total = 0;
+        for (int j = 0; j < albums[i].songs_number; j++) {
+            albums[i].songs[j].name = "Song_" + to_string(j);
+            float duration = i + j;
+            albums[i].songs[j].duration = duration;
+            total += duration;
+        }
+        albums[i].total_duration = total;
     }
+
     return albums;
 }
 
-album* albums = init();
 
-int main()
-{
-    
+album* filter_funk_soul(album* arr, int& size_filtered) {
+    album* result = new album[ALBUMS_COUNT];
+    size_filtered = 0;
+    for (int i = 0; i < ALBUMS_COUNT; i++) {
+        if (arr[i].style == Funk || arr[i].style == Soul) {
+            result[size_filtered] = arr[i];
+            size_filtered++;
+        }
+    }
+    return result;
+}
+
+
+bool cmp_years(const album& lhs, const album& rhs) {
+    return lhs.year < rhs.year;
+}
+void bubble_sort_by(album* arr, int size, bool (*cmp)(const album&, const album&)) {
+    for (size_t i = 0; i < size; i++)
+    {
+        bool sorted = true;
+        for (size_t j = 1; j < size - i; j++)
+        {
+            if (!cmp(arr[j - 1], arr[j])) {
+                swap(arr[j - 1], arr[j]);
+                sorted = false;
+            }
+        }
+        if (sorted) break;
+    }
+}
+
+
+void print_album(const album& a) {
+    cout << "\nAlbum: " << a.name
+        << "\nArtist: " << a.artist
+        << "\nStyle: " << a.style
+        << "\nYear: " << a.year
+        << "\nDuration: " << a.total_duration
+        << "\nSongs:\n";
+
+    for (int i = 0; i < a.songs_number; i++) {
+        cout << " - " << a.songs[i].name << " (" << a.songs[i].duration << " min's)\n";
+    }
+}
+
+bool cmp_durations(const album& lhs, const album& rhs) {
+    return lhs.total_duration < rhs.total_duration;
+}
+void print_top3_longest(album* arr, int size) {
+    bubble_sort_by(arr, size, cmp_durations);
+
+    cout << "\n3 longest albums:\n";
+    for (int i = 0; i < 3 && i < size; i++) {
+        print_album(arr[i]);
+    }
+}
+
+
+void edit_album(album& a) {
+    cout << "\nEdit album: " << a.name << endl;
+    cout << "Enter new name: ";
+    cin >> a.name;
+
+    cout << "Enter new year: ";
+    cin >> a.year;
+}
+
+
+album* filter_linkin_park(album* arr, int& size_filtered) {
+    album* result = new album[ALBUMS_COUNT];
+    size_filtered = 0;
+    for (int i = 0; i < ALBUMS_COUNT; i++) {
+        if (arr[i].artist == "Linkin Park") {
+            result[size_filtered] = arr[i];
+            size_filtered++;
+        }
+    }
+    return result;
+}
+
+
+void print_array(album* arr, int size) {
+    for (int i = 0; i < size; i++) {
+        print_album(arr[i]);
+    }
+}
+
+
+int main() {
+    album* albums = init();
+
+    int filtered_size;
+    album* funk_soul = filter_funk_soul(albums, filtered_size);
+
+    bubble_sort_by(funk_soul, filtered_size, cmp_years);
+
+    cout << "\nFiltered (Funk/Soul) sorted by year:\n";
+    print_array(funk_soul, filtered_size);
+
+    print_top3_longest(albums, ALBUMS_COUNT);
+
+    edit_album(albums[0]);
+
+    int lp_size;
+    album* lp_albums = filter_linkin_park(albums, lp_size);
+
+    cout << "\nLinkin Park albums:\n";
+    print_array(lp_albums, lp_size);
+
+    return 0;
 }
