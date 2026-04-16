@@ -1,4 +1,5 @@
-﻿#include <iostream>
+#include <iostream>
+#include <fstream>
 #include <string>
 
 using namespace std;
@@ -22,8 +23,31 @@ struct album {
     int year;
     float total_duration;
     int songs_number;
+    int listeners = 0;
     song* songs;
 };
+
+string formatted_style(styles style) {
+    string formatted_style;
+    switch (style) {
+        case Funk:
+            formatted_style = "Funk";
+            break;
+        case Soul:
+            formatted_style = "Soul";
+            break;
+        case Jazz:
+            formatted_style = "Jazz";
+            break;
+        case Rock:
+            formatted_style = "Rock";
+            break;
+        default:
+            formatted_style = "Unknown";
+            break;
+    }
+    return formatted_style;
+}
 
 const size_t ALBUMS_COUNT = 20;
 
@@ -60,7 +84,6 @@ album* init() {
     return albums;
 }
 
-
 album* filter_funk_soul(album* arr, int& size_filtered) {
     album* result = new album[ALBUMS_COUNT];
     size_filtered = 0;
@@ -72,7 +95,6 @@ album* filter_funk_soul(album* arr, int& size_filtered) {
     }
     return result;
 }
-
 
 bool cmp_years(const album& lhs, const album& rhs) {
     return lhs.year < rhs.year;
@@ -92,13 +114,13 @@ void bubble_sort_by(album* arr, int size, bool (*cmp)(const album&, const album&
     }
 }
 
-
 void print_album(const album& a) {
     cout << "\nAlbum: " << a.name
         << "\nArtist: " << a.artist
-        << "\nStyle: " << a.style
+        << "\nStyle: " << formatted_style(a.style)
         << "\nYear: " << a.year
         << "\nDuration: " << a.total_duration
+        << "\nListeners: " << a.listeners
         << "\nSongs:\n";
 
     for (int i = 0; i < a.songs_number; i++) {
@@ -118,7 +140,6 @@ void print_top3_longest(album* arr, int size) {
     }
 }
 
-
 void edit_album(album& a) {
     cout << "\nEdit album: " << a.name << endl;
     cout << "Enter new name: ";
@@ -127,7 +148,6 @@ void edit_album(album& a) {
     cout << "Enter new year: ";
     cin >> a.year;
 }
-
 
 album* filter_linkin_park(album* arr, int& size_filtered) {
     album* result = new album[ALBUMS_COUNT];
@@ -141,7 +161,6 @@ album* filter_linkin_park(album* arr, int& size_filtered) {
     return result;
 }
 
-
 void print_array(album* arr, int size) {
     for (int i = 0; i < size; i++) {
         print_album(arr[i]);
@@ -153,6 +172,51 @@ void free_albums(album* arr, int size) {
         delete[] arr[i].songs;
     }
     delete[] arr;
+}
+
+void read_file(album albums[]) {
+    ifstream fin;
+    int listeners;
+    fin.open("listeners.txt");
+    int i = 0;
+    if (fin.is_open()) {
+        while (!fin.eof())
+        {
+            fin >> listeners;
+            albums[i].listeners = listeners;
+            i++;
+        }
+    }
+    fin.close();
+    cout << "Чтение LISTENERS из файла:\n";
+    print_array(albums, ALBUMS_COUNT);
+}
+
+void binary_output(album albums[]) {
+    ofstream out("binary.txt",
+        ios::binary | ios::out);
+    for (int i = 0; i < ALBUMS_COUNT; i++)
+    {
+        out.write((char*)&albums[i], sizeof(albums[i]));
+    }
+    out.close();
+    cout << "Запись в бинарный файл.\n";
+}
+
+void binary_input(album albums[]) {
+    fstream in("binary.txt", ios::binary | ios::in);
+    int i = 0;
+    if (in.is_open()) {
+        while (!in.eof())
+        {
+            in.read((char*)&albums[i], sizeof(albums[i]));
+            i++;
+        }
+        in.close();
+    }
+    
+    cout << "Чтение из бинарного файла:\n";
+    print_array(albums, ALBUMS_COUNT);
 }
 
 int main() {
@@ -176,10 +240,15 @@ int main() {
     cout << "\nLinkin Park albums:\n";
     print_array(lp_albums, lp_size);
 
+    cout << "\n10 занятие\n\n";
+    read_file(albums);
+    binary_input(albums);
+    binary_output(albums);
+    
     // освобождение памяти
     delete[] funk_soul;
     delete[] lp_albums;
     free_albums(albums, ALBUMS_COUNT);
-    
+
     return 0;
 }
